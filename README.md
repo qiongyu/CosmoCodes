@@ -1,4 +1,4 @@
 CosmoCodes
 =======
 
-Some codes for cosmological purposes. README files in each directory.
+Some C++/Python codes for cosmological purposes. README files in each directory.

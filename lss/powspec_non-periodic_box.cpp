@@ -13,7 +13,7 @@
 using namespace std;
 
 int Ngrid = 1024;
-int Ngrid3 = Ngrid*Ngrid*Ngrid;
+long Ngrid3 = Ngrid*Ngrid*Ngrid;
 double Lbox = 8000;
 int nbin = 80;
 double completeness = 1.;
@@ -44,32 +44,32 @@ double sinc(double x)
 }
 
 template <class T>
-T* initialize_vector(int dim)
+T* initialize_vector(long dim)
 {
 
   T *x;
   x = new T[dim];
 
-  for(int i=0;i<dim;i++) x[i] = 0;
+  for(long i=0;i<dim;i++) x[i] = 0;
 
   return x;
 }
 
 template <class V>
-V*** initialize_3D_array(int dim1, int dim2, int dim3)
+V*** initialize_3D_array(long dim1, long dim2, long dim3)
 {
 
   V ***x;
 
   x = new V**[dim1];
 
-  for(int i=0;i<dim1;i++)
+  for(long i=0;i<dim1;i++)
   {
     x[i] = new V*[dim2];
-    for(int j=0;j<dim2;j++)
+    for(long j=0;j<dim2;j++)
     {
       x[i][j] = new V[dim3];
-      for(int k=0;k<dim3;k++) x[i][j][k] = 0.0;
+      for(long k=0;k<dim3;k++) x[i][j][k] = 0.0;
     }
   }
 
@@ -107,11 +107,11 @@ double* initialize_fft_grid_vectors2()
 }
 
 template <class U>
-int kill_3D_array(U ***x, int dim1, int dim2)
+int kill_3D_array(U ***x, long dim1, long dim2)
 {
-  for(int i=0;i<dim1;i++)
+  for(long i=0;i<dim1;i++)
   {
-    for(int j=0;j<dim2;j++)
+    for(long j=0;j<dim2;j++)
     {
       delete[] x[i][j];
     }
@@ -126,20 +126,20 @@ template <class K>
 K calc_mean(K ***x)
 {
   K sum=0;
-  for(int i=0;i<Ngrid;i++)
+  for(long i=0;i<Ngrid;i++)
   {
-    for(int j=0;j<Ngrid;j++)
+    for(long j=0;j<Ngrid;j++)
     {
-      for(int k=0;k<Ngrid;k++) sum += x[i][j][k];
+      for(long k=0;k<Ngrid;k++) sum += x[i][j][k];
     }
   }
   sum = sum/Ngrid3;
   return sum;
 }
 
-int get_num_lines(string infile)
+long get_num_lines(string infile)
 {
-  int nline=0;
+  long nline=0;
   string line;
   ifstream ff;
 
@@ -159,24 +159,24 @@ int get_num_lines(string infile)
   return nline-1;
 }
 
-int cic_mass(_gal *p, int N, double ***rho, double box)
+int cic_mass(_gal *p, long N, double ***rho, double box)
 {
   double lside = Ngrid/box;
   double lside3 = pow(Ngrid/box,3);
 
-  for(int i=0;i<N;i++)
+  for(long i=0;i<N;i++)
   {
 //Because the box is periodic, the Ngrid+1th grid point is the 0th grid point!
 //That's why Ngrid == Ncell!
     double dd1 = p[i].x*lside;
     double dd2 = p[i].y*lside;
     double dd3 = p[i].z*lside;
-    int i1 = floor(dd1);
-    int i2 = floor(dd2);
-    int i3 = floor(dd3);
-    int j1 = i1 + 1;
-    int j2 = i2 + 1;
-    int j3 = i3 + 1;
+    long i1 = floor(dd1);
+    long i2 = floor(dd2);
+    long i3 = floor(dd3);
+    long j1 = i1 + 1;
+    long j2 = i2 + 1;
+    long j3 = i3 + 1;
     dd1 = dd1 - i1;
     dd2 = dd2 - i2;
     dd3 = dd3 - i3;
@@ -299,7 +299,7 @@ int powspec(double ***delta, int nbin, double box, double norm, double shot,
 
 //Do fft to get P(k)...
   double *delta_in;
-  int r2csize=Ngrid*Ngrid*(Ngrid+2);
+  long r2csize=Ngrid*Ngrid*(Ngrid+2);
   delta_in = initialize_vector<double>(r2csize);
   int count=0;
 
@@ -338,7 +338,7 @@ int powspec(double ***delta, int nbin, double box, double norm, double shot,
   double ***pk_3D;
   pk_3D = initialize_3D_array<double>(Ngrid,Ngrid,Ngrid);
   
-  int r2csizek = Ngrid/2+1;
+  long r2csizek = Ngrid/2+1;
   double lside3 = pow(box/Ngrid,3);
   #pragma omp parallel for schedule(dynamic) 
   for(int i=0;i<Ngrid;i++)
@@ -352,9 +352,9 @@ int powspec(double ***delta, int nbin, double box, double norm, double shot,
       sincky *= sincky;
       for(int k=0;k<r2csizek;k++)
       {
-        int dex = (i*Ngrid + j)*r2csizek + k;
-        int redex = 2*dex;
-        int imdex = redex+1;
+        long dex = (i*Ngrid + j)*r2csizek + k;
+        long redex = 2*dex;
+        long imdex = redex+1;
         sinckz = sinc(kgrid[k]*lcico2);
         sinckz *= sinckz;
         wcic = sinckx*sincky*sinckz;
@@ -394,7 +394,7 @@ int powspec(double ***delta, int nbin, double box, double norm, double shot,
   return 0;
 }
 
-_gal* read_file(string fname, int *N)
+_gal* read_file(string fname, long *N)
 {
   //Read in galaxies
   ifstream infile;
@@ -407,7 +407,7 @@ _gal* read_file(string fname, int *N)
   g = new _gal[*N];
   infile.open( fname.c_str(), ios::in );
 
-  for(int i=0;i<*N;i++)
+  for(long i=0;i<*N;i++)
   {
     string line;
     double temp;
@@ -450,14 +450,14 @@ int main(int argc, char* argv[])
   cout << "Using " << Ngrid << " grid points..." << endl;
 
   _gal *gal, *rand;
-  int Ngal, Nrand;
+  long Ngal, Nrand;
   gal = read_file(ifile,&Ngal);
   rand = read_file(randifile,&Nrand);
 
   double xmin=1e33;
   double ymin=1e33;
   double zmin=1e33;
-  for(int i=0;i<Ngal;i++)
+  for(long i=0;i<Ngal;i++)
   {
     if(gal[i].x < xmin) xmin = gal[i].x;
     if(gal[i].y < ymin) ymin = gal[i].y;
@@ -474,7 +474,7 @@ int main(int argc, char* argv[])
   double wrsum = 0.;
   double wgsum = 0.;
   double wr2nzsum=0.;
-  for(int i=0;i<Ngal;i++)
+  for(long i=0;i<Ngal;i++)
   {
     double ww,ww2;
     ww = gal[i].weight;
@@ -486,7 +486,7 @@ int main(int argc, char* argv[])
     wg2nzsum += ww2*gal[i].nz;
     wg2sum += ww2;
   }
-  for(int i=0;i<Nrand;i++)
+  for(long i=0;i<Nrand;i++)
   {
     double ww,ww2;
     ww = rand[i].weight;
@@ -538,7 +538,6 @@ int main(int argc, char* argv[])
   //double shot = 1/norm * (wg2sum + alpha*alpha*wr2sum); //Will
   double shot = 1/norm * (alpha*(1.+alpha)*wr2sum); //Francesco
   powspec(nrho_in, nbin, Lbox, norm, shot, kk, pp);
-//  for(int i=0;i<nbin;i++) cout << kk[i] << ' ' << pp[i] << endl;
   cout << "shot + norm: " << shot << ' ' << norm << endl;
 //  cout << sqrt(w2sum*ng*ng) << ' ' <<  1/ng << ' ' << 1/nr << endl;
 

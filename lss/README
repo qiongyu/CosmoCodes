@@ -1,0 +1,221 @@
+The Codes:
+For Input/Output files see run_lss.py.
+***NOTE THAT ALL WEIGHTS MUST BE UNNORMALIZED WEIGHTS!!***
+***FOR COMA, N_CPU should probably be 16 (make sure in .pbs file too)***
+
+1) reconstruction_periodic_box.cpp
+	This code is an example of reconstruction in a periodic box. 
+Global variables:
+	Ngrid - number of grid points
+	Lbox - box size
+	sigma - smoothing length of Gaussian filter
+	bias - galaxy bias
+        f - growth factor
+Notes:
+	- Read in the particles, do CIC on galaxies and calculate delta, then 
+	do the reconstruction on galaxies and randoms.
+	- Be careful that all particle positions _MUST_ be positive (i.e. 
+	between 0 and Lbox). 
+	- The routines that actually do the reconstruction are reconstruction(),
+	greens() and shift_particles().
+	- THIS CODES DOES RSD CORRECTION for redshift space!
+
+2) reconstruction_non-periodic_box.cpp
+	This code is an example of reconstruction in a non-periodic box.
+Global variables:
+	Ngrid - number of grid points
+	Lbox - box size (that you want to embed your survey in)
+	sigma - smoothing length of Gaussian filter
+	bias - galaxy bias
+        rand_per_cell - the number of random points used in the random cell
+                        counts file to determine the fraction of a cell that
+                        falls within the survey volume
+        f - growth factor (beta/bias)
+        mins[] - 3-element array used to shift the particles such that they
+                 are all positive (i.e. px - mins[x], etc.). Almost must be
+                 matched to the positions of the random points used to 
+                 generate the random cell counts file. Set within main().
+Notes:
+	- This code uses a random cell counts file to determine how much of a
+        grid cell falls within the survey volume. This file allows us to fill
+        in the grid cells that do not fall within the survey or that fall 
+        partially within the survey with the mean density.
+	- You can switch between CIC and NGP using cicflag. The code calculates
+        densities using whichever method you pick and then it does the
+        reconstruction on the galaxies and randoms.
+	- Be careful that all particle positions _MUST_ be positive (i.e. 
+	between 0 and Lbox). There is an array called mins[] within the code
+        that lets you shift the positions of the particles such that they are
+        all positive. Note that the particles must be shifted such that they
+        match the volume/positions used to generate the random cell counts 
+        file...or else this file will be useless!
+
+3) correlate_periodic_box.cpp (and correlate_rec_periodic_box.cpp)
+	This is an example of how to calculate the correlation function from a
+	periodic box. The _rec_ version calculates xi after reconstruction.
+Global variables:
+	N_CPU - number of CPUs to use (change this to 16 for coma)
+	L_BOX - box length
+	N_GRID - number of grid cells to partition the box into => creates a 
+		 mesh for doing the pair-counts
+
+	observer - the distance that the observer should be away from the box
+		   (this is mostly to get the quadrupole right)
+
+	RMIN - lower limit of smallest r-bin 
+	RMAX - upper limit of largest r-bin
+	nR - number of r-bins
+
+	MUMIN - lower limit of smallest mu-bin
+	MUMAX - upper limit of largest mu-bin
+	nMU - number of mu-bins
+Notes:
+	- This code currently outputs (into a file) the monopole, the 
+	quadrupole and the DD, DR and RR counts weighted appropriately by 
+	n_data/n_randoms as a function of r only. It _DOES_ calculate the full
+	pair-count as a function of (r,mu) as well, I just never output it to
+	file, but you can if you want.
+	- Reads in particles, divides volume up into mesh cells, determines
+	which cell each particle belongs to, then loops over the cells to
+	count pairs. It should be pretty optimized as to which cells to loop
+	over and which to skip as well as avoids double counting. But of course
+	there are probably more speed-ups! (For example using a mesh is pretty
+	slow already, a tree might work better.)
+	- The actual monopole and quadrupole are calculated using the r and mu
+	from each pair of particles directly! But I also have a separate 
+	counter to count DD, DR, RR in each (r,mu) bin (again, this is the 
+	thing that's never actually output). 
+	- The routine that does the particle gridding is called 
+	grid_particles(). The routine that does the pair counts is called 
+	count_pairs().
+
+4) correlate_non-periodic_box.cpp (and correlate_rec_non-periodic_box.cpp)
+	This is an example of how to calculate the correlation function from a
+	non-periodic volume.
+Global variables:
+	N_CPU - number of CPUs to use (change this to 16 for coma)
+	L_BOX - box length (_MAKE SURE_ your volume fits in this length!)
+	N_GRID - number of grid cells to partition the box into => creates a 
+		 mesh for doing the pair-counts
+
+	observer - the distance that the observer should be away from the box
+		   (this is mostly to get the quadrupole right)
+
+	RMIN - lower limit of smallest r-bin 
+	RMAX - upper limit of largest r-bin
+	nR - number of r-bins
+
+	MUMIN - lower limit of smallest mu-bin
+	MUMAX - upper limit of largest mu-bin
+	nMU - number of mu-bins
+Notes:
+	- This code pretty much does the same thing as described above. The		only thing that you have to _BE CAREFUL ABOUT_ is that you need to 
+	find the minimum x,y,z of the randoms and galaxies so that when you
+	grid up the particles, you can subtract these minimum values from 
+	x,y,z, of the particles. This is _NECESSARY_ to get the particle
+	gridding right if there are negative x,y,z coordinates!
+	- IF RUNNING THE REC VERSION, you do not need to use the same boxsize
+	as for reconstruction. In fact it is probably better if you just use
+	the smallest possible box that fits the entire volume.
+
+5) powspec_periodic_box.cpp
+	This is an example of how to calculate the power spectrum from a
+	periodic box. In fact it even includes an example of how to 
+	calculate the cross-spectrum (for calculating things like the
+	propagator G(k) -- see Hee-Jong's paper).
+Global variables:
+	Ngrid - number of grid points
+	nbin - number of bins for P(k), bins are in log
+	Lbox - box length
+Notes:
+	- Reads in particles, does CIC, FFTW => P(k).
+	- The code that calculates the power spectrum is powspec(). The code
+	that calculates the cross-spectrum is crossspec(). binpk() does the
+	binning in k.
+
+6) powspec_non-periodic_box.cpp
+	This code calculates the fkp power spectrum from an irregular volume.
+Global variables:
+	Ngrid - number of grid points
+	Lbox - box length (_MAKE SURE_ your volume fits in this box length)
+	nbin - number of bins for P(k), bins are in log
+	completeness - completeness of the survey (this only needs to be set
+		       to a value != 1 if the n(z) is corrected for 
+		       completeness -- we actually want to use n(z) _BEFORE_ 
+		       this correction!).
+Notes:
+	- Reads in particles, CIC galaxies and randoms, combine them as in
+	the code and the FFT. Divide by the normalization and subtract 
+	shot-noise, then bin => P(k).
+
+===============================================================================
+
+TO COMPILE (see "makes"):
+g++ [name.cpp] -o [executable name] -lm -lfftw3_threads -lfftw3 -lpthread -fopenmp
+
+You don't have to use all of the libraries listed here, just pick the 
+appropriate subset.
+	-lm is the math library
+	-lfftw3* are the fftw libraries
+	-lpthread is needed to get the ffts to run in parallel
+	-fopenmp for OpenMP
+
+You might need to source Yu Feng's setup.sh file. If it moves, ask him!
+. ~yfeng1/local/bin/setup.sh
+
+You will need to put the following line in the .pbs script:
+For csh:
+  setenv OMP_NUM_THREADS 4
+For bash (I think):
+  export OMP_NUM_THREADS=4
+
+===============================================================================
+
+Other interesting tidbits:
+
+1) When you use FFTW from configuration space to Fourier space, the _only_
+factor you need to divide delta_k by is L^3/N^3 (for a 3D transform).
+
+2) To get the power spectrum, after you do <delta_k delta_k*>, you need to 
+divide by an additional factor of L^3. (Note that here I'm taking delta_k to
+already be corrected by the factor in 1)).
+
+3) The kx, ky and kz values that correspond to your Ngrid^3 grid points after
+using FFTW correspond to 
+0,1,2,...,Ngrid/2-1,-Ngrid/2,-Ngrid/2+1,...,-1 
+_IN THAT ORDER EXACTLY!_
+
+4) It's best to deconvolve the CIC window function from delta_k after doing a
+CIC in configuration space. The window function looks like:
+w_cic = [ sinc(k_x * L_cic/2) * (same for y) * (same for z) ]^2
+l_cic = Lbox/Ngrid
+k_x, k_y, k_z are integral multiples of 2pi/L (so basically the kx,ky,kz values
+from 3) multiplied by 2pi/L).
+Divide delta_k by this w_cic to deconvolve.
+
+5) To do the FFTW in place, you _MUST_ use the flag FFTW_ESTIMATE. 
+
+6) To do the FFTW in place using r2c and c2r, the padding is as follows:
+From configuration space to Fourier space, use r2c:
+- In configuration space, allocate a 1D double-precision array that's length
+Ngrid*Ngrid*(Ngrid+2). Call this delta_r.
+- Fill this array with your delta values, but skip 2 array indices (i.e. don't
+fill them) every Ngrid steps. So for example if Ngrid is 4, fill array elements
+0,1,2,3, but skip 4,5, then fill 6,7,8,9, then skip 10,11, etc. 
+- Note that your delta values should either be in an NgridxNgridxNgrid array
+or in a flattened version of this array to make filling delta_r easy.
+- After the FFTW on delta_r, the contents of delta_r will be replaced by the
+Fourier space values since the transform is in place.
+- For the grid-point (kx,ky,kz)=(i,j,k), the real and imaginary components of
+delta_k will correspond to the array elements in delta_r with index 2*DEX and 
+2*DEX+1 where DEX=(i*Ngrid+j)*(Ngrid/2+1)*k.
+***EXAMPLE IN POWSPEC CODES (powspec() function)***
+
+From Fourier space to configuration space, use c2r. After you fft back to
+configuration space, you can slot the results back into a 3D array that's
+NgridxNgridxNgrid.
+****EXAMPLE in RECONSTRUCTION CODES (greens() function)***
+
+7) There are a lot of subtleties on how to count pairs that are partitioned
+into grids. I try to explain a lot of these in the correlate codes in the
+count_pairs function. 

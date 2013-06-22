@@ -1,0 +1,52 @@
+To use the xi(r) fitting code for the monopole only:
+
+1) The covariance matrix.
+Currently the code lets you use both the mock covariance matrix as well as a
+modified Gaussian covariance matrix. Using the modified Gaussian covariance
+matrix requires more code that I have no uploaded because I want to discourage
+people from using it. 
+
+To use the mock covariance matrix, you need to have the average xi(r) in the
+file "red_norec_avg.xi". You must also have a list of all the mock xi(r) in
+the file "red_norec.txt".
+
+2) You can change the cosmological parameters in the file.
+
+3) You can adjust the form of the A(r) marginalization term. Currently the
+code has A(r) = 1/r^2 + ..., so the lowest order term is 1/r^2. In the code
+there is a variable called xib0, which is currently
+
+xib0[i,:] = r**(i-3.) [for i starting at 1]
+
+You can adjust the exponent on r according by using i+N or i-N, etc, BUT,
+i MUST start at 1.
+
+4) You have the option of including basic RSD in the fitting model (uncomment
+the pertinent lines in the code, search for RSD).
+
+5) There are NO priors on anything in the fitting.
+
+6) To run:
+python inv_testmocks_full.py -n[] -c[] -d[] -u[] -s[]
+For -n, the argument should be the number of terms in want in A(r)
+For -c, the argument should be: m for the mock covariance matrix
+				g for the modified Gaussian covariance matrix
+For -d, the argument should be the smallest r in the fitting range. Currently
+you can only use 20, 30, 50 and 70.
+For -u, the argument should be the largest r in the fitting range. Currently
+you can only use 150 and 200.
+For -s, the argument should be: z for sigma_nl=0
+				f for fiducial sigma_nl (I think it's 8)
+				p for fiducial sigma_nl+2
+				m for fiducial sigma_nl-2
+				i for sigma_nl=1000 (i.e no BAO)
+
+7) You can adjust the fitting range to whatever you want. The variables sub1 
+and sub2 are the indices of the smallest and largest r-values in the fitting 
+range.
+NOTE: sub2 is actually the index of the largest k-value PLUS ONE!
+
+8) Outputs:
+nalpha* - alpha, chi^2, b^2
+nstd* - alpha, sigma_alpha (with log prior, width = 0.15), sigma_alpha (no prior), p(alpha < 1)
+ninv* - plots of fits

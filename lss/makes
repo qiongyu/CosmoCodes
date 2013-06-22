@@ -1,0 +1,23 @@
+#correlation function periodic box
+g++ correlate_periodic_box.cpp -o cpb -lm -fopenmp
+
+#correlation function periodic box with reconstruction
+g++ correlate_rec_periodic_box.cpp -o crpb -lm -fopenmp
+
+#correlation function non-periodic box
+g++ correlate_non-periodic_box.cpp -o cnpb -lm -fopenmp
+
+#correlation function non-periodic box
+g++ correlate_rec_non-periodic_box.cpp -o crnpb -lm -fopenmp
+
+#power spectrum periodic box
+g++ powspec_periodic_box.cpp -o ppb -lm -lfftw3_threads -lfftw3 -lpthread -fopenmp
+
+#power spectrum non-periodic box
+g++ powspec_non-periodic_box.cpp -o pnpb -lm -lfftw3_threads -lfftw3 -lpthread -fopenmp
+
+#reconstruction periodic box
+g++ reconstruction_periodic_box.cpp -o rpb -lm -lfftw3_threads -lfftw3 -lpthread -fopenmp
+
+#reconstruction non-periodic box
+g++ reconstruction_non-periodic_box.cpp -o rnpb -lm -lfftw3_threads -lfftw3 -lpthread -fopenmp

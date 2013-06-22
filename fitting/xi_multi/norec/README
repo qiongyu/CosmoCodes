@@ -1,0 +1,73 @@
+To use the xi(r) fitting code for multipoles:
+
+1) The covariance matrix.
+Currently the code lets you use both the mock covariance matrix as well as a
+modified Gaussian covariance matrix. Using the modified Gaussian covariance
+matrix requires more code that I have no uploaded because I want to discourage
+people from using it.
+
+To use the mock covariance matrix, you need to have the average xi(r) in the
+file "red_norec_avg.xi". You must also have a list of all the mock xi(r) in
+the file "red_norec.txt".
+
+2) You can change the cosmological parameters in the file.
+
+3) You can adjust the form of the A(r) marginalization term. Currently the
+code has A(r) = 1/r^2 + ..., so the lowest order term is 1/r^2. In the code
+there is a variable called Atemp, which is currently
+
+Atemp = r**(i-2.) [for i starting at 0 for the monopole]
+Atemp = r**(i-nptm-2.) [for i starting at nptm for the quadrupole]
+nptm is the number of A(r) marginalization terms for the monopole
+
+You can adjust the exponent on r according by using i+N or i-N, etc, BUT,
+i MUST start at 0 and nptm.
+
+4) The model includes basic RSD. It is normalized to the amplitude of the
+data monopole at r=50 before fitting.
+
+5) There is a top-hat prior on epsilon (width = 0.15). There is a Gaussian
+prior on beta (width = 0.2, mean=beta_c). 
+
+6) The code currently calculates the fit at the best-fit monopole value of
+alpha which is read from a file (search for amono). If you don't have the
+monopole fits, you will need to comment this out as well as the corresponding
+lines that do the fit (and plot it). Again, if you search for "amono", it 
+should be pretty obvious which lines to comment out.
+
+7) To run:
+python inv_thering.py -m[] -q[] -c[] -d[] -u[]
+For -m, the argument should be the number of terms in want in monopole A(r)
+For -q, the argument should be the number of terms in want in quadrupole A(r)
+For -c, the argument should be: m for the mock covariance matrix
+                                g for the modified Gaussian covariance matrix
+For -d, the argument should be the smallest r in the fitting range. Currently
+you can only use 20, 30, 50 and 70.
+For -u, the argument should be the largest r in the fitting range. Currently
+you can only use 150 and 200.
+
+8) Outputs:
+nalpha* - alpha, epsilon, chi^2, b^2, beta
+ninv* - plots of fits
+
+8) To get errors (sigma_alpha, sigma_epsilon), you need to run gridae.py. The
+arguments for running this script should be the same as for inv_thering.py.
+This code calculates chi^2 at various grid points in alpha and epsilon. You
+can adjust the number and range of grid points using 
+- natry (number of grid points in alpha)
+- netry (number of grid points in epsilon)
+- almin and almax (min and max of alpha range)
+- epmin and epmax (min and max of epsilon range)
+
+9) Outputs:
+grid*.dat - grid point alpha, grid point epsilon, chi^2
+ngrid* - plot of 2D contours in alpha, epsilon
+
+10) To get sigma_alpha and sigma_epsilon, ls all of the grid*.dat files 
+produced by gridae.py into "grids.txt". Then run calcsigma.py.
+
+11) Outputs:
+stdevs.dat - mean alpha, variance alpha, mean epsilon, variance epsilon, 
+covariance (alpha,epsilon), correlation coefficient (alpha,epsilon)
+chi^2.pdf - plots 1D marginalized distributions of alpha, epsilon
+Note: To get sigma_alpha and sigma_epsilon, you need to sqrt the variances.
